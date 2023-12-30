@@ -16,6 +16,12 @@ human_stop_filename = "human_stop_dates.csv"
 # 4. Chemin vers le répertoire contenant les fichiers des tops DEPART et STOP en temps POSIX
 export_timestamp_path = "./export/"
 
+# 5. Nom du fichier des tops DEPART au format timestamp POSIX
+timestamp_start_filename = "timestamp_start.txt"
+
+# 6. Nom du fichier des tops STOP au format timestamp POSIX
+timestamp_stop_filename = "timestamp_stop.txt"
+
 # ===========FIN DES MODIFICATIONS UTILISATEUR   ===================
 
 
@@ -37,9 +43,6 @@ def convert_date_to_timestamp(date_filepath: str, timestamp_filepath: str) -> No
             export_file.write(ts + ",\n")
         export_file.write("]")
 
-
-timestamp_start_filename = "timestamp_start.txt"
-timestamp_stop_filename = "timestamp_stop.txt"
 
 human_start_filepath = os.path.join(import_csv_filepath, human_start_filename)
 human_stop_filepath = os.path.join(import_csv_filepath, human_stop_filename)
