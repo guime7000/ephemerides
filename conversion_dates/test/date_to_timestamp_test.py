@@ -13,3 +13,5 @@ def test_convert_date_to_timestamp():
 
     assert ts[1].split(",")[0] == str(
         int(datetime(2023, 12, 25, 8, 0, 0).timestamp()))
+
+    os.remove(timestamp_test_filepath)
