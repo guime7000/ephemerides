@@ -3,8 +3,13 @@
 
 RTC_DS3231 rtc;
 
+// Ajouter les timestamps (la date en secondes en dessous. Attention aux virgules !!)
+unsigned long start_ts[] = {
+1711734180,
+1711734240,
+};
+
 unsigned int attack_duration = 15; // Durée (en s) de la montée pour les leds
-//const int number_of_starts = 180; // Nombre de timestamps de départ
 
 // Affectation des broches de LED témoin
 const byte motor_relay_1 = 4; // Motor Relais 1 sur PIN 4
@@ -16,12 +21,6 @@ const byte check_button=2; // Pin for check sequence push button
 bool check_button_state = 0;
 const byte check_green_led=10; // Green Led for checks
 const byte check_red_led=11; // Red Led for checks
-
-
-unsigned long start_ts[] = {
-  1711668520,
-  1711668580,
-  1711668640};
 
 int start_timestamp_index = 0;
 
@@ -78,9 +77,11 @@ void setup() {
 }
 
 void loop(){
+
   DateTime now = rtc.now();
   int led_timestamp_index = 0;
   unsigned int steps_limit= 512;
+  Serial.println(rtc.now().unixtime());
   if (attack_duration<256){
     steps_limit = 2* attack_duration;
   }
@@ -91,7 +92,6 @@ void loop(){
     }
 
   if (is_valid_timestamp(start_ts[start_timestamp_index])){
-    Serial.println("INNNNN");
     current_timestamp = start_ts[start_timestamp_index];
     power_motor(motor_relay_1);
     power_motor(motor_relay_2);
@@ -140,42 +140,45 @@ void stop_motor(int relay_number){
     digitalWrite(relay_number, LOW);
   }
 
+// Gestion de la séquence d'allumage des diodes de test.
 void check_button_sequence(){
-    analogWrite(check_green_led, 0);
-    analogWrite(check_red_led, 0);
-    analogWrite(led_relay_1, 0);
-    analogWrite(led_relay_2, 0);
-    delay(1000);
 
-    analogWrite(check_green_led, 63);
-    analogWrite(led_relay_1, 63);
-    analogWrite(led_relay_2, 63);
-    delay(1000);
+  int duree_palier = 1000; // durée des paliers en millisecondes
 
-    analogWrite(check_green_led, 128);
-    analogWrite(led_relay_1, 128);
-    analogWrite(led_relay_2, 128);
-    delay(1000);
-    
-    analogWrite(check_green_led, 255);
-    analogWrite(check_red_led, 255);
-    analogWrite(led_relay_1, 255);
-    analogWrite(led_relay_2, 255);
-    delay(3000);
+  analogWrite(check_green_led, 0);
+  analogWrite(check_red_led, 0);
+  analogWrite(led_relay_1, 0);
+  analogWrite(led_relay_2, 0);
 
-    analogWrite(check_green_led, 0);
-    analogWrite(check_red_led, 128);
-    analogWrite(led_relay_1, 128);
-    analogWrite(led_relay_2, 128);
-    delay(1000);
+  analogWrite(check_green_led, 63);
+  analogWrite(led_relay_1, 63);
+  analogWrite(led_relay_2, 63);
+  delay(duree_palier);
 
-    analogWrite(check_red_led, 63);
-    analogWrite(led_relay_1, 63);
-    analogWrite(led_relay_2, 63);
-    delay(1000);
+  analogWrite(check_green_led, 128);
+  analogWrite(led_relay_1, 128);
+  analogWrite(led_relay_2, 128);
+  delay(duree_palier);
+  
+  analogWrite(check_green_led, 255);
+  analogWrite(check_red_led, 255);
+  analogWrite(led_relay_1, 255);
+  analogWrite(led_relay_2, 255);
+  delay(duree_palier * 3);
 
-    analogWrite(check_red_led, 0);
-    analogWrite(led_relay_1, 0);
-    analogWrite(led_relay_2, 0);
-    delay(1000);  
+  analogWrite(check_green_led, 0);
+  analogWrite(check_red_led, 128);
+  analogWrite(led_relay_1, 128);
+  analogWrite(led_relay_2, 128);
+  delay(duree_palier);
+
+  analogWrite(check_red_led, 63);
+  analogWrite(led_relay_1, 63);
+  analogWrite(led_relay_2, 63);
+  delay(duree_palier);
+
+  analogWrite(check_red_led, 0);
+  analogWrite(led_relay_1, 0);
+  analogWrite(led_relay_2, 0);
+  delay(duree_palier);  
 }
