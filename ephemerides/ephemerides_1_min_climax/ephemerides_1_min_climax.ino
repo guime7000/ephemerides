@@ -3,6 +3,8 @@
 
 RTC_DS3231 rtc;
 
+// ============= Paramètrage données Installation =========================
+
 // Ajouter les timestamps (la date en secondes en dessous. Attention aux virgules !!)
 unsigned long start_ts[] = {
 1717192800,
@@ -11,7 +13,13 @@ unsigned long start_ts[] = {
 1717192980,
 };
 
-unsigned int attack_duration = 15; // Durée (en s) de la montée pour les leds
+// Durée (en s) de la montée pour les leds
+unsigned int attack_duration = 15;
+
+// Durée (en s) du climax une fois les leds allumées à fond après la montée
+unsigned int climax_duration = 10; 
+
+// ============= Fin Paramètrage données Installation =========================
 
 // Affectation des broches de LED témoin
 const byte motor_relay_1 = 4; // Motor Relais 1 sur PIN 4
@@ -19,17 +27,24 @@ const byte led_relay_1 = 5; // Led Relais 2 sur PIN 5
 const byte led_relay_2 = 6; // Led Relais 3 sur PIN 6
 const byte motor_relay_2 = 7; // Motor Relais 4 sur PIN 7
 
+// Paramétrage Check Sequence
 const byte check_button=2; // Pin for check sequence push button
 bool check_button_state = 0;
 const byte check_green_led=10; // Green Led for checks
 const byte check_red_led=11; // Red Led for checks
 
-int start_timestamp_index = 0;
+// Paramétrage Display RTC
+const byte check_button_rtc=8; // Pin for display RTC push button
+bool check_button_rtc_state = 0;
 
+
+int start_timestamp_index = 0;
 unsigned long current_timestamp;
 unsigned int timestamp_step;
-
-byte pwm_command[512];
+byte nb_iter;
+byte iteration_counter = 0;
+byte pwm_command = 0;
+byte pwm_step;
 
 void setup() {
 
@@ -54,57 +69,42 @@ void setup() {
   pinMode(check_green_led, OUTPUT);
   pinMode(check_red_led, OUTPUT);
 
+  pinMode(check_button_rtc, INPUT_PULLUP);
+
   delay(3000);
 
-  byte pwm_step = compute_pwm_steps(attack_duration);
+  pwm_step = compute_pwm_steps(attack_duration);
   timestamp_step = compute_timestamp_step(attack_duration);
+  nb_iter = compute_nb_iter(attack_duration);
 
-  if (attack_duration > 256){
-    for (int i=0; i < 256; i++){
-      pwm_command[i] = i* pwm_step;
-    }
-    for (int i = 256; i<512; i++ ){
-      pwm_command[i] = pwm_command[i-1] - pwm_step;
-    }
-  }
-  else{
-    for (int i=0; i < attack_duration; i++){
-      pwm_command[i] = i* pwm_step;
-    }
-    for (int i = attack_duration; i<2*attack_duration; i++ ){
-      pwm_command[i] = pwm_command[i-1] - pwm_step;
-    }
-  }
-
+  DateTime init_now = rtc.now();
+  
 }
 
 void loop(){
 
   DateTime now = rtc.now();
   int led_timestamp_index = 0;
-  unsigned int steps_limit= 512;
-  Serial.println(rtc.now().unixtime());
-  if (attack_duration<256){
-    steps_limit = 2* attack_duration;
-  }
 
   check_button_state = digitalRead(check_button);
   if (!check_button_state){
     check_button_sequence();
     }
 
+  check_button_rtc_state = digitalRead(check_button_rtc);
+  if (!check_button_rtc_state){
+    display_RTC();
+    }  
+
   if (is_valid_timestamp(start_ts[start_timestamp_index])){
     current_timestamp = start_ts[start_timestamp_index];
     power_motor(motor_relay_1);
     power_motor(motor_relay_2);
-    while (led_timestamp_index < steps_limit){
-      if (is_valid_timestamp(current_timestamp)){
-        analogWrite(led_relay_1, pwm_command[led_timestamp_index]);
-        analogWrite(led_relay_2, pwm_command[led_timestamp_index]);
-        current_timestamp += timestamp_step;
-        led_timestamp_index +=1;
-      }
-    }
+
+    led_power_management(current_timestamp, nb_iter, 1); // Montée lumineuse de durée attack_duration
+    delay(climax_duration); // Climax de durée climax_duration secondes;
+    led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
+
     stop_motor(motor_relay_1);
     stop_motor(motor_relay_2);
     analogWrite(led_relay_1, 0);
@@ -129,10 +129,42 @@ unsigned int compute_timestamp_step(unsigned int attack_duration)  {
 
 byte compute_pwm_steps(unsigned int attack_duration){
   if (attack_duration < 256){
-      return floor(256 / attack_duration);
+      return ceil(256 / attack_duration);
     }
     return 1;
   }
+
+byte compute_nb_iter(unsigned int attack_duration){
+  if (attack_duration < 256) {
+    return attack_duration;
+  }
+  return 255;
+}
+
+void led_power_management(unsigned long current_timestamp, byte nb_iter_max, byte mode){
+  // mode = 1 : la puissance augmente
+  // mode = 0 : la puissance diminue
+
+  byte count_iter = 0;
+  if (mode == 0){
+    current_timestamp = current_timestamp + climax_duration;
+  }
+  while (count_iter < nb_iter_max){
+      if (is_valid_timestamp(current_timestamp)){
+        analogWrite(led_relay_1, pwm_command);
+        analogWrite(led_relay_2, pwm_command);
+        current_timestamp += timestamp_step;
+        if (mode == 1){
+          pwm_command += pwm_step;
+        }
+        else{
+          pwm_command -= pwm_step;
+        }
+        count_iter += 1;
+      }
+    }
+
+}
 
 void power_motor(int relay_number){
       digitalWrite(relay_number, HIGH);
@@ -183,4 +215,23 @@ void check_button_sequence(){
   analogWrite(led_relay_1, 0);
   analogWrite(led_relay_2, 0);
   delay(duree_palier);  
+}
+
+void display_RTC(){
+  DateTime now = rtc.now();
+  Serial.print(now.unixtime());
+  Serial.print(" | ");
+  Serial.print(now.day(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.year(), DEC);
+  Serial.print("  |  ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println(); 
+  delay(1000);
 }
