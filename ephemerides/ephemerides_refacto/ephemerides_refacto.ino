@@ -104,47 +104,12 @@ void loop(){
 
   check_button_seq_state = digitalRead(check_button);
   if (!check_button_seq){
-    power_motor(motor_relay_1);
-    power_motor(motor_relay_2);
-
-    led_power_management(rtc.now().unixtime(), nb_iter, 1); // Montée lumineuse de durée attack_duration
-
-    analogWrite(check_green_led, 255);
-    analogWrite(check_red_led, 255);
-    delay(climax_duration); // Climax de durée climax_duration secondes;
-    analogWrite(check_green_led, 0);
-    analogWrite(check_red_led, 0);
-
-    led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
-
-    stop_motor(motor_relay_1);
-    stop_motor(motor_relay_2);
-    analogWrite(led_relay_1, 0);
-    analogWrite(led_relay_2, 0);
+    play_light_seq(rtc.now().unixtime());
     }  
 
   if (is_valid_timestamp(start_ts[start_timestamp_index])){
     current_timestamp = start_ts[start_timestamp_index];
-    power_motor(motor_relay_1);
-    power_motor(motor_relay_2);
-
-    led_power_management(current_timestamp, nb_iter, 1); // Montée lumineuse de durée attack_duration
-
-    analogWrite(check_green_led, 255);
-    analogWrite(check_red_led, 255);
-    delay(climax_duration); // Climax de durée climax_duration secondes;
-    analogWrite(check_green_led, 0);
-    analogWrite(check_red_led, 0);
-
-    led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
-
-    stop_motor(motor_relay_1);
-    stop_motor(motor_relay_2);
-    
-    analogWrite(check_green_led, 0);
-    analogWrite(check_red_led, 0);
-    analogWrite(led_relay_1, 0);
-    analogWrite(led_relay_2, 0);
+    play_light_seq(current_timestamp);
     start_timestamp_index += 1;
   }
 }
@@ -274,4 +239,24 @@ void display_RTC(){
   Serial.print(now.second(), DEC);
   Serial.println(); 
   delay(1000);
+}
+
+void play_light_seq(unsigned int current_timestamp){
+  power_motor(motor_relay_1);
+  power_motor(motor_relay_2);
+
+  led_power_management(current_timestamp, nb_iter, 1); // Montée lumineuse de durée attack_duration
+
+  analogWrite(check_green_led, 255);
+  analogWrite(check_red_led, 255);
+  delay(climax_duration); // Climax de durée climax_duration secondes;
+  analogWrite(check_green_led, 0);
+  analogWrite(check_red_led, 0);
+
+  led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
+
+  stop_motor(motor_relay_1);
+  stop_motor(motor_relay_2);
+  analogWrite(led_relay_1, 0);
+  analogWrite(led_relay_2, 0);
 }
