@@ -184,12 +184,12 @@ void check_button_sequence(){
   analogWrite(led_relay_1, 0);
   analogWrite(led_relay_2, 0);
 
-  analogWrite(check_green_led, 63);
+  analogWrite(check_green_led, 255);
   analogWrite(led_relay_1, 63);
   analogWrite(led_relay_2, 63);
   delay(duree_palier);
 
-  analogWrite(check_green_led, 128);
+  analogWrite(check_green_led, 255);
   analogWrite(led_relay_1, 128);
   analogWrite(led_relay_2, 128);
   delay(duree_palier);
@@ -201,12 +201,12 @@ void check_button_sequence(){
   delay(duree_palier * 3);
 
   analogWrite(check_green_led, 0);
-  analogWrite(check_red_led, 128);
+  analogWrite(check_red_led, 255);
   analogWrite(led_relay_1, 128);
   analogWrite(led_relay_2, 128);
   delay(duree_palier);
 
-  analogWrite(check_red_led, 63);
+  analogWrite(check_red_led, 255);
   analogWrite(led_relay_1, 63);
   analogWrite(led_relay_2, 63);
   delay(duree_palier);
