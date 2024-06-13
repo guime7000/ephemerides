@@ -37,6 +37,10 @@ const byte check_red_led=11; // Red Led for checks
 const byte check_button_rtc=8; // Pin for display RTC push button
 bool check_button_rtc_state = 0;
 
+// Paramétrage Déclenchement séquence réelle
+const byte check_button_seq=12; // Pin for real sequence push button trigger
+bool check_button_seq_state = 0;
+
 
 int start_timestamp_index = 0;
 unsigned long current_timestamp;
@@ -71,6 +75,8 @@ void setup() {
 
   pinMode(check_button_rtc, INPUT_PULLUP);
 
+  pinMode(check_button_seq, INPUT_PULLUP);
+
   delay(3000);
 
   pwm_step = compute_pwm_steps(attack_duration);
@@ -94,6 +100,27 @@ void loop(){
   check_button_rtc_state = digitalRead(check_button_rtc);
   if (!check_button_rtc_state){
     display_RTC();
+    }
+
+  check_button_seq_state = digitalRead(check_button);
+  if (!check_button_seq){
+    power_motor(motor_relay_1);
+    power_motor(motor_relay_2);
+
+    led_power_management(rtc.now().unixtime(), nb_iter, 1); // Montée lumineuse de durée attack_duration
+
+    analogWrite(check_green_led, 255);
+    analogWrite(check_red_led, 255);
+    delay(climax_duration); // Climax de durée climax_duration secondes;
+    analogWrite(check_green_led, 0);
+    analogWrite(check_red_led, 0);
+
+    led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
+
+    stop_motor(motor_relay_1);
+    stop_motor(motor_relay_2);
+    analogWrite(led_relay_1, 0);
+    analogWrite(led_relay_2, 0);
     }  
 
   if (is_valid_timestamp(start_ts[start_timestamp_index])){
@@ -108,11 +135,15 @@ void loop(){
     delay(climax_duration); // Climax de durée climax_duration secondes;
     analogWrite(check_green_led, 0);
     analogWrite(check_red_led, 0);
-    
+
     led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
 
     stop_motor(motor_relay_1);
     stop_motor(motor_relay_2);
+
+    analogWrite(check_green_led, 0);
+    analogWrite(check_red_led, 0);
+    
     analogWrite(led_relay_1, 0);
     analogWrite(led_relay_2, 0);
     start_timestamp_index += 1;
@@ -163,9 +194,11 @@ void led_power_management(unsigned long current_timestamp, byte nb_iter_max, byt
         if (mode == 1){
           pwm_command += pwm_step;
           analogWrite(check_green_led, 255);
+          analogWrite(check_red_led, 0);
         }
         else{
           pwm_command -= pwm_step;
+          analogWrite(check_green_led, 0);
           analogWrite(check_red_led, 255);
         }
         count_iter += 1;
