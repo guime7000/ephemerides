@@ -102,7 +102,13 @@ void loop(){
     power_motor(motor_relay_2);
 
     led_power_management(current_timestamp, nb_iter, 1); // Montée lumineuse de durée attack_duration
+
+    analogWrite(check_green_led, 255);
+    analogWrite(check_red_led, 255);
     delay(climax_duration); // Climax de durée climax_duration secondes;
+    analogWrite(check_green_led, 0);
+    analogWrite(check_red_led, 0);
+    
     led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
 
     stop_motor(motor_relay_1);
@@ -156,9 +162,11 @@ void led_power_management(unsigned long current_timestamp, byte nb_iter_max, byt
         current_timestamp += timestamp_step;
         if (mode == 1){
           pwm_command += pwm_step;
+          analogWrite(check_green_led, 255);
         }
         else{
           pwm_command -= pwm_step;
+          analogWrite(check_red_led, 255);
         }
         count_iter += 1;
       }
