@@ -7,17 +7,14 @@ RTC_DS3231 rtc;
 
 // Ajouter les timestamps (la date en secondes en dessous. Attention aux virgules !!)
 unsigned long start_ts[] = {
-1717192800,
-1717192860,
-1717192920,
-1717192980,
+1718488170,
 };
 
 // Durée (en s) de la montée pour les leds
-unsigned int attack_duration = 15;
+unsigned int attack_duration = 1200;
 
 // Durée (en s) du climax une fois les leds allumées à fond après la montée
-unsigned int climax_duration = 10; 
+unsigned int climax_duration = 60; 
 
 // ============= Fin Paramètrage données Installation =========================
 
@@ -102,20 +99,21 @@ void loop(){
     display_RTC();
     }
 
-  check_button_seq_state = digitalRead(check_button);
-  if (!check_button_seq){
+  check_button_seq_state = digitalRead(check_button_seq);
+  if (!check_button_seq_state){
     power_motor(motor_relay_1);
     power_motor(motor_relay_2);
-
+    
     led_power_management(rtc.now().unixtime(), nb_iter, 1); // Montée lumineuse de durée attack_duration
 
     analogWrite(check_green_led, 255);
     analogWrite(check_red_led, 255);
-    delay(climax_duration); // Climax de durée climax_duration secondes;
-    analogWrite(check_green_led, 0);
-    analogWrite(check_red_led, 0);
-
+    
+    delay(climax_duration*1000); // Climax de durée climax_duration secondes;
+    
     led_power_management(rtc.now().unixtime(), nb_iter, 0); // Descente lumineuse de durée attack_duration
+    
+    analogWrite(check_red_led, 0);
 
     stop_motor(motor_relay_1);
     stop_motor(motor_relay_2);
@@ -132,7 +130,9 @@ void loop(){
 
     analogWrite(check_green_led, 255);
     analogWrite(check_red_led, 255);
-    delay(climax_duration); // Climax de durée climax_duration secondes;
+
+    delay(climax_duration*1000); // Climax de durée climax_duration secondes;
+    
     analogWrite(check_green_led, 0);
     analogWrite(check_red_led, 0);
 
@@ -140,7 +140,6 @@ void loop(){
 
     stop_motor(motor_relay_1);
     stop_motor(motor_relay_2);
-    
     analogWrite(check_green_led, 0);
     analogWrite(check_red_led, 0);
     analogWrite(led_relay_1, 0);
@@ -182,9 +181,9 @@ void led_power_management(unsigned long current_timestamp, byte nb_iter_max, byt
   // mode = 0 : la puissance diminue
 
   byte count_iter = 0;
-  if (mode == 0){
-    current_timestamp = current_timestamp + climax_duration;
-  }
+  // if (mode == 0){
+  //   current_timestamp = current_timestamp + climax_duration;
+  // }
   while (count_iter < nb_iter_max){
       if (is_valid_timestamp(current_timestamp)){
         analogWrite(led_relay_1, pwm_command);
