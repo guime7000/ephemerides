@@ -84,8 +84,6 @@ void setup() {
   timestamp_step = compute_timestamp_step(attack_duration);
   nb_iter = compute_nb_iter(attack_duration);
 
-  DateTime init_now = rtc.now();
-
   for (int i=0; i<= ARRAY_SIZE(start_ts)-1; i++){
   if (start_ts[start_timestamp_index] < rtc.now().unixtime()) {
     start_timestamp_index += 1;
@@ -99,9 +97,7 @@ void setup() {
 
 void loop(){
 
-  Serial.println(start_timestamp_index);
   DateTime now = rtc.now();
-  int led_timestamp_index = 0;
 
   check_button_state = digitalRead(check_button);
   if (!check_button_state){
